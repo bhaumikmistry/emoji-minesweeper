@@ -3,7 +3,7 @@ const numbers = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣
 const iDevise = navigator.platform.match(/^iP/)
 const feedback = document.querySelector('.feedback')
 
-var Game = function (cols, rows, number_of_bombs, set, usetwemoji) {
+var Game = function (cols, rows, number_of_bombs, set, emptyset, usetwemoji) {
   this.number_of_cells = cols * rows
   this.map = document.getElementById('map')
   this.cols = Number(cols)
@@ -11,8 +11,10 @@ var Game = function (cols, rows, number_of_bombs, set, usetwemoji) {
   this.number_of_bombs = Number(number_of_bombs)
   this.rate = number_of_bombs / this.number_of_cells
 
+  this.emptyemojiset = emptyset
   this.emojiset = set
   this.numbermoji = [this.emojiset[0]].concat(numbers)
+  console.log(this.numbermoji);
   this.usetwemoji = usetwemoji || false
 
   this.init()
@@ -178,7 +180,7 @@ Game.prototype.resetMetadata = function () {
   document.getElementById('timer').textContent = '0.00'
   document.querySelector('.wrapper').classList.remove('won', 'lost')
   document.querySelector('.result-emoji').textContent = ''
-  document.querySelector('.default-emoji').innerHTML = this.usetwemoji ? twemoji.parse('😀') : '😀'
+  document.querySelector('.default-emoji').innerHTML = this.usetwemoji ? twemoji.parse('💩') : '💩'
   document.querySelector('.js-settings').innerHTML = this.usetwemoji ? twemoji.parse('🔧') : '🔧'
 }
 
@@ -200,7 +202,11 @@ Game.prototype.mine = function (bomb) {
   base.isMasked = true
   if (bomb) base.isBomb = true
   base.reveal = function (won) {
-    var emoji = base.isBomb ? (won ? that.emojiset[2] : that.emojiset[1]) : that.numbermoji[base.mine_count]
+    var randomnumber = Math.floor(Math.random() * (that.emptyemojiset.length-1 - 0 + 1)) + 0;
+    var temp_empty = (base.mine_count > 0) ? that.numbermoji[base.mine_count] : that.emptyemojiset[randomnumber];
+    console.log(randomnumber);
+    console.log(temp_empty);
+    var emoji = base.isBomb ? (won ? that.emojiset[2] : that.emojiset[1]) : temp_empty
     var text = base.isBomb ? (won ? "Bomb discovered" : "Boom!") : (base.mine_count === 0 ? "Empty field" : base.mine_count + " bombs nearby")
     this.childNodes[0].remove()
     this.setAttribute('aria-label', text)
@@ -243,8 +249,45 @@ Game.prototype.prepareEmoji = function () {
     return ele
   }
 
+  function makeEmptyEmojiElement (emoji) {
+    var ele
+    if(that.usetwemoji) {
+      if (emoji.src) {
+        ele = emoji
+      } else {
+        ele = document.createElement('img')
+        ele.className = 'emoji emptyemoji'
+        ele.setAttribute('aria-hidden', 'true')
+        ele.src = twemoji.parse(emoji).match(/src=\"(.+)\">/)[1]
+      }
+    } else {
+      ele = document.createTextNode(emoji.alt || emoji.data || emoji)
+    }
+    return ele
+  }
+
+  function makeNumberEmojiElement (emoji) {
+    var ele
+    if(that.usetwemoji) {
+      if (emoji.src) {
+        ele = emoji
+      } else {
+        ele = document.createElement('img')
+        ele.className = 'emoji numberemoji'
+        ele.setAttribute('aria-hidden', 'true')
+        ele.src = twemoji.parse(emoji).match(/src=\"(.+)\">/)[1]
+      }
+    } else {
+      ele = document.createTextNode(emoji.alt || emoji.data || emoji)
+    }
+    return ele
+  }
+
+  this.emptyemojiset = this.emptyemojiset.map(makeEmptyEmojiElement)
+  console.log(this.emptyemojiset)
   this.emojiset = this.emojiset.map(makeEmojiElement)
-  this.numbermoji = this.numbermoji.map(makeEmojiElement)
+  console.log(this.emojiset)
+  this.numbermoji = this.numbermoji.map(makeNumberEmojiElement)
 }
 
 Game.prototype.bomb_array = function () {
@@ -292,7 +335,7 @@ Game.prototype.showMessage = function () {
   clearInterval(this.timer)
   var seconds = ((new Date() - this.startTime) / 1000).toFixed(2)
   var winner = this.result === 'won'
-  var emoji = winner ? '😎' : '😵'
+  var emoji = winner ? '😎' : '🤢'
   this.updateFeedback(winner ? "Yay, you won!" : "Boom! you lost.")
   document.querySelector('.wrapper').classList.add(this.result)
   document.getElementById('timer').textContent = seconds
